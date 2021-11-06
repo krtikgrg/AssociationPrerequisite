@@ -1,14 +1,15 @@
 import operator
+import copy
 
 class node:
     def __init__(self,letter,parent=None):
         self.letter = letter
-        self.count = 1
+        self.count = 0
         self.parent = parent
         self.children = {}
 
-DATASET = "../data/sign"
-MINSUP = 400
+DATASET = "../data/proof"
+MINSUP = 0
 
 data = []
 itemCount = {}
@@ -50,6 +51,23 @@ for j in range(len(data)):
     ordered_item_set.append(nulist)
     # print(ordered_item_set[len(ordered_item_set)-1])
 
+# temporary data
+
+ordered_item_set.clear()
+ordered_item_set.append(['K','E','M','O','Y'])
+ordered_item_set.append(['K','E','O','Y'])
+ordered_item_set.append(['K','E','M'])
+ordered_item_set.append(['K','M','Y'])
+ordered_item_set.append(['K','E','O'])
+s_itemCount.clear()
+s_itemCount['K'] = 5
+s_itemCount['E'] = 4
+s_itemCount['M'] = 3
+s_itemCount['O'] = 3
+s_itemCount['Y'] = 3
+
+# temporary data ends
+
 header_table = {}
 for i in s_itemCount:
     header_table[i] = []
@@ -59,4 +77,60 @@ root = node('NULL')
 nodes.append(root)
 lstuse = 0
 
+def insert(index,itemset,i):
+    global nodes
+    global lstuse
+    global header_table
+    curnode = nodes[index]
+    curnode.count += 1
+    if i == len(itemset):
+        return
+    letter = itemset[i]
+    if letter in curnode.children:
+        insert(curnode.children[letter],itemset,i+1)
+    else:
+        nunode = node(letter,index)
+        lstuse += 1
+        nodes.append(nunode)
+        curnode.children[letter] = lstuse
+        header_table[letter].append(lstuse)
+        insert(curnode.children[letter],itemset,i+1)
+
+for itemset in ordered_item_set:
+    strt = 0
+    if len(itemset) == 0:
+        continue
+    insert(strt,itemset,0)
+
+conditional_pattern_base = {}
+for i in s_itemCount:
+    conditional_pattern_base[i] = []
+    ept = []
+    conditional_pattern_base[i].append(copy.deepcopy(ept))
+    conditional_pattern_base[i].append(copy.deepcopy(ept))
+
+def makePatternBase(index,base):
+    global nodes
+    global conditional_pattern_base
+    curnode = nodes[index]
+    conditional_pattern_base[curnode.letter][0].append(copy.deepcopy(base))
+    conditional_pattern_base[curnode.letter][1].append(curnode.count)
+    base.append(curnode.letter)
+    for k in curnode.children:
+        makePatternBase(curnode.children[k],base)
+    base.pop()
+
+for i in nodes[0].children:
+    base = []
+    makePatternBase(nodes[0].children[i],base)
+
+frequentPatterns = {} #tuples with support
+for i in conditional_pattern_base:
+    bases = conditional_pattern_base[i][0]
+    freqs = conditional_pattern_base[i][1]
+    for j in range(len(bases)):
+        base = bases[j]
+        freq = freqs[j]
+        if len(base) == 0:
+            continue
 # print(header_table)
