@@ -8,8 +8,8 @@ class node:
         self.parent = parent
         self.children = {}
 
-DATASET = "../data/proof"
-MINSUP = 0
+DATASET = "../data/msnbc"
+MINSUP = 400 #10 for proof, 450 for sign, anything below 490 for covid, 400 for msnbc 
 
 data = []
 itemCount = {}
@@ -53,18 +53,18 @@ for j in range(len(data)):
 
 # temporary data
 
-ordered_item_set.clear()
-ordered_item_set.append(['K','E','M','O','Y'])
-ordered_item_set.append(['K','E','O','Y'])
-ordered_item_set.append(['K','E','M'])
-ordered_item_set.append(['K','M','Y'])
-ordered_item_set.append(['K','E','O'])
-s_itemCount.clear()
-s_itemCount['K'] = 5
-s_itemCount['E'] = 4
-s_itemCount['M'] = 3
-s_itemCount['O'] = 3
-s_itemCount['Y'] = 3
+# ordered_item_set.clear()
+# ordered_item_set.append(['K','E','M','O','Y'])
+# ordered_item_set.append(['K','E','O','Y'])
+# ordered_item_set.append(['K','E','M'])
+# ordered_item_set.append(['K','M','Y'])
+# ordered_item_set.append(['K','E','O'])
+# s_itemCount.clear()
+# s_itemCount['K'] = 5
+# s_itemCount['E'] = 4
+# s_itemCount['M'] = 3
+# s_itemCount['O'] = 3
+# s_itemCount['Y'] = 3
 
 # temporary data ends
 
@@ -125,12 +125,38 @@ for i in nodes[0].children:
     makePatternBase(nodes[0].children[i],base)
 
 frequentPatterns = {} #tuples with support
+
+def generate(index,base,freq,mytup,i):
+    global frequentPatterns
+    
+    if index == len(base):
+        if len(mytup) != 0:
+            mytup = mytup + (i,)
+            if mytup in frequentPatterns:
+                frequentPatterns[mytup] += freq
+            else:
+                frequentPatterns[mytup] = freq
+        return
+
+    copyTup1 = copy.deepcopy(mytup)
+    copyTup2 = copy.deepcopy(mytup)
+
+    # print(base[index])
+    copyTup1 = copyTup1 + (base[index],)
+    generate(index+1,base,freq,copyTup1,i)
+    generate(index+1,base,freq,copyTup2,i)
+
 for i in conditional_pattern_base:
     bases = conditional_pattern_base[i][0]
     freqs = conditional_pattern_base[i][1]
     for j in range(len(bases)):
         base = bases[j]
         freq = freqs[j]
-        if len(base) == 0:
-            continue
+        # print(base)
+        mytup = ()
+        generate(0,base,freq,mytup,i)
+
+for i in frequentPatterns:
+    if frequentPatterns[i]>MINSUP:
+        print("pattern is",i)
 # print(header_table)
