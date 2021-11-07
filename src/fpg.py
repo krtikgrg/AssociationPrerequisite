@@ -8,8 +8,8 @@ class node:
         self.parent = parent
         self.children = {}
 
-DATASET = "../data/msnbc"
-MINSUP = 400 #10 for proof, 450 for sign, anything below 490 for covid, 400 for msnbc 
+DATASET = "../data/proof"
+MINSUP = 10 #10 for proof, 450 for sign, anything below 490 for covid, 400 for msnbc, 3 for utube 
 
 data = []
 itemCount = {}
@@ -36,7 +36,7 @@ for i in range(len(data)):
 
 s_itemCount = dict( sorted(itemCount.items(), key=operator.itemgetter(1),reverse=True))
 # print(itemCount.items())
-print(s_itemCount)
+# print(s_itemCount)
 
 ordered_item_set = []
 for j in range(len(data)):
@@ -124,7 +124,7 @@ for i in nodes[0].children:
     base = []
     makePatternBase(nodes[0].children[i],base)
 
-frequentPatterns = {} #tuples with support
+frequentPatterns = {} #frozensets with support
 
 def generate(index,base,freq,mytup,i):
     global frequentPatterns
@@ -132,10 +132,11 @@ def generate(index,base,freq,mytup,i):
     if index == len(base):
         if len(mytup) != 0:
             mytup = mytup + (i,)
-            if mytup in frequentPatterns:
-                frequentPatterns[mytup] += freq
+            test = frozenset(mytup)
+            if test in frequentPatterns:
+                frequentPatterns[test] += freq
             else:
-                frequentPatterns[mytup] = freq
+                frequentPatterns[test] = freq
         return
 
     copyTup1 = copy.deepcopy(mytup)
@@ -156,7 +157,44 @@ for i in conditional_pattern_base:
         mytup = ()
         generate(0,base,freq,mytup,i)
 
+ctr = 0
 for i in frequentPatterns:
-    if frequentPatterns[i]>MINSUP:
-        print("pattern is",i)
+    if frequentPatterns[i]>=MINSUP:
+        # print("pattern is",tuple(i),"with count",frequentPatterns[i])
+        ctr+=1
+# print(ctr)
+
+closedDict = {}
+for i in frequentPatterns:
+    if frequentPatterns[i]>=MINSUP:
+        if frequentPatterns[i] in closedDict:
+            closedDict[frequentPatterns[i]].append(i)
+        else:
+            closedDict[frequentPatterns[i]] = []
+            closedDict[frequentPatterns[i]].append(i)
+
+finalPatterns = []
+
+for i in frequentPatterns:
+    if frequentPatterns[i] >= MINSUP:
+        nota = 0
+        for x in closedDict[frequentPatterns[i]]:
+            if i!=x and frozenset.issubset(i,x):
+                nota = 1
+                # print("removing",tuple(i),"due to",tuple(x))
+                break
+        
+        if nota == 0:
+            finalPatterns.append(tuple(i))
+
+# print()
+# print("closed patterns calculated")
+# print()
+# print(len(finalPatterns))
+for i in finalPatterns:
+    print(i)
+
+
+
+
 # print(header_table)
