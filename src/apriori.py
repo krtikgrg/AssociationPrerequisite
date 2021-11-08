@@ -1,15 +1,22 @@
 import operator
 import copy
 import math
+import json
 
-DATASET = "../data/proof"
-MINSUP = 3 #10 for proof, 450 for sign, anything below 490 for covid, 400 for msnbc, 3 for utube 
-NUMPARTIOTIONS = 4
-MinSup = math.ceil(MINSUP/NUMPARTIOTIONS)
+DATASET = "../data/msnbc"
+MINSUP = 400 #10 for proof, 450 for sign, anything below 490 for covid, 400 for msnbc, 3 for utube 
+NUMPARTITIONS = 20
+MinSup = math.floor(MINSUP/NUMPARTITIONS)
 
 def calcHash(a,b,modVal):
-    c = ord(a)
-    d = ord(b)
+    if not isinstance(a,int):
+        c = ord(a)
+    else:
+        c = a
+    if not isinstance(b,int):    
+        d = ord(b)
+    else:
+        d = b
     reval = (c*10 + d)%modVal
     # print("hash ",reval) 
     return reval
@@ -44,8 +51,7 @@ def getNextPosibleIteration(previous):
                 # print("intersect ",intersect)
                 if not checkInfrequent(intersect,previous):
                     # print("Wohoo",intersect)
-                    if intersect not in nextPosib:
-                        nextPosib[intersect] = 0
+                    nextPosib[intersect] = 0
     return nextPosib
 
 def apriori(partition): #all transactions in partition have unique items only
@@ -77,7 +83,7 @@ def apriori(partition): #all transactions in partition have unique items only
                 a = transaction[i]
                 b = transaction[j]
                 itemset = frozenset({transaction[i],transaction[j]})
-                hashh = calcHash(a,b,modVal)
+                hashh = calcHash(min(a,b),max(a,b),modVal)
                 # print(hashh)
                 if hashh in bucketCtr:
                     # print("hash found")
@@ -92,6 +98,16 @@ def apriori(partition): #all transactions in partition have unique items only
                     bucket[hashh][itemset] = 1
                     bucketCtr[hashh] = 1
     # closedDist = {}
+
+    # lst = frozenset([17,143])
+    # hashh = calcHash(17,143,modVal)
+    # print(len(partition))
+    # print(dictForOne[17])
+    # print(dictForOne[143])
+    # print(bucket[hashh][lst])
+    # print(MinSup)
+    # print()
+    # print()
 
     for item in dictForOne:
         if dictForOne[item] >= MinSup:
@@ -165,31 +181,73 @@ with open(DATASET,'r') as file:
                 curdata.append(num)
 
 for i in range(len(data)):
-    data[i] = list(set(data[i]))
+    data[i] = list(set(data[i])) #data[i] is list
 
-if NUMPARTIOTIONS>len(data):
-    NUMPARTIOTIONS = len(data)//2
+if NUMPARTITIONS>len(data):
+    NUMPARTITIONS = len(data)//2
 
-partitions = []
-for i in range(NUMPARTIOTIONS):
+partitions = [] #list of lists of lists
+for i in range(NUMPARTITIONS):
     partition = []
     partitions.append(partition)
 
 partition = 0
 for i in range(len(data)):
-    partitions[partition].append(data[i])
+    partitions[partition].append(data[i]) #partitions[i] is list of lists
     partition += 1
-    partition = partition%NUMPARTIOTIONS
+    partition = partition%NUMPARTITIONS
 
 allPosibFrequent = {}
 
-for partition in range(NUMPARTIOTIONS):
-    fst = apriori(partitions[partition])
+for partition in range(NUMPARTITIONS):
+    fst = apriori(partitions[partition]) #fst is list of frozensets
     for aset in fst:
         if aset not in allPosibFrequent:
             allPosibFrequent[aset] = 0
+# lst = [17,143]
+# lst = frozenset(lst)
+# allPosibFrequent[lst] = 0
+
+for transaction in data:
+    transSet = frozenset(transaction)
+    for freqSet in allPosibFrequent:
+        if frozenset.issubset(freqSet,transSet):
+            allPosibFrequent[freqSet] += 1
+
+# lst = [17,143]
+# lst = frozenset(lst)
+# print(len(data))
+# print(allPosibFrequent[lst])
+# exit()
 
 
+closedDict = {}
+for freqSet in allPosibFrequent:
+    if allPosibFrequent[freqSet] >= MINSUP:
+        if allPosibFrequent[freqSet] in closedDict:
+            closedDict[allPosibFrequent[freqSet]].append(freqSet)
+        else:
+            closedDict[allPosibFrequent[freqSet]] = []
+            closedDict[allPosibFrequent[freqSet]].append(freqSet)
+
+finalPatterns = []
+for freqSet in allPosibFrequent:
+    if allPosibFrequent[freqSet] >= MINSUP:
+        nota = 0
+        for x in closedDict[allPosibFrequent[freqSet]]:
+            if x!=freqSet and frozenset.issubset(freqSet,x):
+                nota = 1
+                break
+        
+        if nota == 0 and len(freqSet)>1:
+            finalPatterns.append(tuple(freqSet))
+
+# finalPatterns.sort()
+for i in finalPatterns:
+    print(i)
+
+# with open("apop.txt",'w') as fp:
+    # json.dump(finalPatterns,fp)
     
         
     

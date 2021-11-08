@@ -1,5 +1,6 @@
 import operator
 import copy
+import json
 
 class node:
     def __init__(self,letter,parent=None):
@@ -8,8 +9,8 @@ class node:
         self.parent = parent
         self.children = {}
 
-DATASET = "../data/proof"
-MINSUP = 10 #10 for proof, 450 for sign, anything below 490 for covid, 400 for msnbc, 3 for utube 
+DATASET = "../data/msnbc"
+MINSUP = 400 #10 for proof, 450 for sign, anything below 490 for covid, 400 for msnbc, 3 for utube 
 
 data = []
 itemCount = {}
@@ -191,10 +192,15 @@ for i in frequentPatterns:
 # print("closed patterns calculated")
 # print()
 # print(len(finalPatterns))
+# finalPatterns.sort()
 for i in finalPatterns:
     print(i)
 
 
+# with open("fpop.txt",'w') as fp:
+#     json.dump(finalPatterns,fp)
 
-
+# lst = [18,143]
+# lst = frozenset(lst)
+# print(frequentPatterns[lst])
 # print(header_table)
