@@ -9,8 +9,8 @@ class node:
         self.parent = parent
         self.children = {}
 
-DATASET = "../data/covid"
-MINSUP = 480 #10 for proof, 450 for sign, anything below 490 for covid, 400 for msnbc, 3 for utube 
+DATASET = "../data/proof"
+MINSUP = 10 #10 for proof, 450 for sign, anything below 490 for covid, 400 for msnbc, 3 for utube 
 
 data = []
 itemCount = {}
@@ -197,8 +197,8 @@ for i in finalPatterns:
     print(i)
 
 
-with open("fpop.txt",'w') as fp:
-    json.dump(finalPatterns,fp)
+# with open("fpop.txt",'w') as fp:
+    # json.dump(finalPatterns,fp)
 
 # lst = [2,4,7]
 # lst = frozenset(lst)

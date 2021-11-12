@@ -3,8 +3,8 @@ import copy
 import math
 import json
 
-DATASET = "../data/covid"
-MINSUP = 480 #10 for proof, 450 for sign, anything below 490 for covid, 400 for msnbc, 3 for utube 
+DATASET = "../data/sign"
+MINSUP = 450 #10 for proof, 450 for sign, anything below 490 for covid, 400 for msnbc, 3 for utube 
 NUMPARTITIONS = 20
 MinSup = math.floor(MINSUP/NUMPARTITIONS)
 
@@ -246,8 +246,8 @@ for freqSet in allPosibFrequent:
 for i in finalPatterns:
     print(i)
 
-with open("apop.txt",'w') as fp:
-    json.dump(finalPatterns,fp)
+# with open("apop.txt",'w') as fp:
+    # json.dump(finalPatterns,fp)
     
         
     
