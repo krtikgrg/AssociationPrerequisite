@@ -9,8 +9,8 @@ class node:
         self.parent = parent
         self.children = {}
 
-DATASET = "../data/sign"
-MINSUP = 450 #10 for proof, 450 for sign, anything below 490 for covid, 400 for msnbc, 3 for utube 
+DATASET = "../data/proof"
+MINSUP = 10 #10 for proof, 450 for sign, anything below 490 for covid, 400 for msnbc, 3 for utube 
 
 data = []
 itemCount = {}
@@ -37,7 +37,7 @@ for i in range(len(data)):
 
 s_itemCount = dict( sorted(itemCount.items(), key=operator.itemgetter(1),reverse=True))
 # print(itemCount.items())
-# print(s_itemCount)
+print(s_itemCount)
 
 ordered_item_set = []
 for j in range(len(data)):
@@ -200,7 +200,11 @@ for i in finalPatterns:
 with open("fpop.txt",'w') as fp:
     json.dump(finalPatterns,fp)
 
-# lst = [18,143]
+lst = [2,4,7]
+lst = frozenset(lst)
+print(frequentPatterns[lst])
+# lst = [2,3,4,6]
 # lst = frozenset(lst)
 # print(frequentPatterns[lst])
+
 # print(header_table)

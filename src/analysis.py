@@ -2,10 +2,13 @@ import operator
 import copy
 import math
 import json
+import time
+import matplotlib.pyplot as plt
 
-DATASET = "../data/sign"
-MINSUP = 450 #10 for proof, 450 for sign, anything below 490 for covid, 400 for msnbc, 3 for utube 
+DATASET = "../data/msnbc"
+MINSUP = 400 #10 for proof, 450 for sign, anything below 490 for covid, 400 for msnbc, 3 for utube 
 NUMPARTITIONS = 20
+MAXPARTITIONS = 16
 MinSup = math.floor(MINSUP/NUMPARTITIONS)
 
 def calcHash(a,b,modVal):
@@ -183,74 +186,103 @@ with open(DATASET,'r') as file:
 for i in range(len(data)):
     data[i] = list(set(data[i])) #data[i] is list
 
-if NUMPARTITIONS>len(data):
-    NUMPARTITIONS = len(data)//2
+timeRequired = []
+numPartitions = []
 
-partitions = [] #list of lists of lists
-for i in range(NUMPARTITIONS):
-    partition = []
-    partitions.append(partition)
+for numP in range(1,MAXPARTITIONS):
 
-partition = 0
-for i in range(len(data)):
-    partitions[partition].append(data[i]) #partitions[i] is list of lists
-    partition += 1
-    partition = partition%NUMPARTITIONS
+    NUMPARTITIONS = numP
+    MinSup = math.floor(MINSUP/NUMPARTITIONS)
+    # if NUMPARTITIONS>len(data):
+        # NUMPARTITIONS = len(data)//2
 
-allPosibFrequent = {}
+    partitions = [] #list of lists of lists
+    for i in range(NUMPARTITIONS):
+        partition = []
+        partitions.append(partition)
 
-for partition in range(NUMPARTITIONS):
-    fst = apriori(partitions[partition]) #fst is list of frozensets
-    for aset in fst:
-        if aset not in allPosibFrequent:
-            allPosibFrequent[aset] = 0
-# lst = [17,143]
-# lst = frozenset(lst)
-# allPosibFrequent[lst] = 0
+    partition = 0
+    for i in range(len(data)):
+        partitions[partition].append(data[i]) #partitions[i] is list of lists
+        partition += 1
+        partition = partition%NUMPARTITIONS
 
-for transaction in data:
-    transSet = frozenset(transaction)
+    allPosibFrequent = {}
+
+    curTime = 0
+    sumTime = 0
+    tempCurTime = time.time()
+
+
+    for partition in range(NUMPARTITIONS):
+        strtTime = time.time()
+        fst = apriori(partitions[partition]) #fst is list of frozensets
+        endTime = time.time()
+        curTime = max(curTime,endTime-strtTime)
+        strtTime = time.time()
+        for aset in fst:
+            if aset not in allPosibFrequent:
+                allPosibFrequent[aset] = 0
+        endTime = time.time()
+        sumTime += (endTime-strtTime)
+    # lst = [17,143]
+    # lst = frozenset(lst)
+    # allPosibFrequent[lst] = 0
+    strtTime = time.time()
+
+    for transaction in data:
+        transSet = frozenset(transaction)
+        for freqSet in allPosibFrequent:
+            if frozenset.issubset(freqSet,transSet):
+                allPosibFrequent[freqSet] += 1
+
+    # lst = [17,143]
+    # lst = frozenset(lst)
+    # print(len(data))
+    # print(allPosibFrequent[lst])
+    # exit()
+
+
+    closedDict = {}
     for freqSet in allPosibFrequent:
-        if frozenset.issubset(freqSet,transSet):
-            allPosibFrequent[freqSet] += 1
+        if allPosibFrequent[freqSet] >= MINSUP:
+            if allPosibFrequent[freqSet] in closedDict:
+                closedDict[allPosibFrequent[freqSet]].append(freqSet)
+            else:
+                closedDict[allPosibFrequent[freqSet]] = []
+                closedDict[allPosibFrequent[freqSet]].append(freqSet)
 
-# lst = [17,143]
-# lst = frozenset(lst)
-# print(len(data))
-# print(allPosibFrequent[lst])
-# exit()
+    finalPatterns = []
+    for freqSet in allPosibFrequent:
+        if allPosibFrequent[freqSet] >= MINSUP:
+            nota = 0
+            for x in closedDict[allPosibFrequent[freqSet]]:
+                if x!=freqSet and frozenset.issubset(freqSet,x):
+                    nota = 1
+                    break
+                
+            if nota == 0 and len(freqSet)>1:
+                finalPatterns.append(tuple(freqSet))
 
-
-closedDict = {}
-for freqSet in allPosibFrequent:
-    if allPosibFrequent[freqSet] >= MINSUP:
-        if allPosibFrequent[freqSet] in closedDict:
-            closedDict[allPosibFrequent[freqSet]].append(freqSet)
-        else:
-            closedDict[allPosibFrequent[freqSet]] = []
-            closedDict[allPosibFrequent[freqSet]].append(freqSet)
-
-finalPatterns = []
-for freqSet in allPosibFrequent:
-    if allPosibFrequent[freqSet] >= MINSUP:
-        nota = 0
-        for x in closedDict[allPosibFrequent[freqSet]]:
-            if x!=freqSet and frozenset.issubset(freqSet,x):
-                nota = 1
-                break
-        
-        if nota == 0 and len(freqSet)>1:
-            finalPatterns.append(tuple(freqSet))
-
-# finalPatterns.sort()
-for i in finalPatterns:
-    print(i)
-
-with open("apop.txt",'w') as fp:
-    json.dump(finalPatterns,fp)
+    # finalPatterns.sort()
+    endTime = time.time()
+    sumTime += (endTime-strtTime)
+    # for i in finalPatterns:
+        # print(i)
     
-        
-    
+    print("Time required for NUMPARTIONS =",NUMPARTITIONS,"is",sumTime+curTime)
+    # print("Time required for NUMPARTIONS =",NUMPARTITIONS,"is",endTime-tempCurTime)
+    timeRequired.append(sumTime+curTime)
+    # timeRequired.append(endTime-tempCurTime)
+    numPartitions.append(numP)
+
+    # with open("apop.txt",'w') as fp:
+        # json.dump(finalPatterns,fp)
+
+plt.plot(numPartitions,timeRequired)
+plt.show()
+
+
     
 
 
